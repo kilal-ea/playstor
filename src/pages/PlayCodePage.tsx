@@ -10,6 +10,7 @@ import { RewardCodeCard } from '../components/RewardCodeCard';
 import { ErrorState } from '../components/ErrorState';
 import { HowItWorksModal } from '../components/Modals/HowItWorksModal';
 import { TermsModal } from '../components/Modals/TermsModal';
+import { LockerModal } from '../components/Modals/LockerModal';
 import { Ad, AD_KEYS } from '../components/Ad';
 import {
   Sparkles,
@@ -45,18 +46,18 @@ export const PlayCodePage: React.FC = () => {
     resetFlow,
   } = useRewardFlow();
 
-  // ===== Type Assertion لحل مشكلة never =====
   const session = rawSession as RewardSession | null;
 
   // Modals
   const [isHowItWorksOpen, setIsHowItWorksOpen] = useState(false);
   const [isTermsOpen, setIsTermsOpen] = useState(false);
+  const [isLockerOpen, setIsLockerOpen] = useState(false);
 
-  // ===== Countdown قبل ظهور الكود =====
+  // Countdown قبل ظهور الكود
   const [countdown, setCountdown] = useState(REWARD_FOUND_DELAY_SECONDS);
   const [showCode, setShowCode] = useState(false);
 
-  // ===== Countdown إعادة التعيين =====
+  // Countdown إعادة التعيين
   const [redirectCountdown, setRedirectCountdown] = useState(
     REDIRECT_AFTER_REVEAL_SECONDS
   );
@@ -122,6 +123,11 @@ export const PlayCodePage: React.FC = () => {
     }
   }, [session, copyCode]);
 
+  // ==================== معالج إتمام Locker ====================
+  const handleLockerUnlock = useCallback(() => {
+    unlockReward();
+  }, [unlockReward]);
+
   return (
     <div className="min-h-screen flex flex-col bg-play-surface text-slate-800">
       <Header
@@ -179,7 +185,6 @@ export const PlayCodePage: React.FC = () => {
                     onCopy={handleCopy}
                   />
 
-                  {/* رسالة تحذيرية */}
                   <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 sm:p-5 flex gap-3 text-left">
                     <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
                     <p className="text-sm sm:text-base text-amber-800 leading-relaxed">
@@ -189,7 +194,6 @@ export const PlayCodePage: React.FC = () => {
                     </p>
                   </div>
 
-                  {/* إعلان مربع */}
                   <div className="flex justify-center pt-2">
                     <Ad
                       adKey={AD_KEYS.square300x250.key}
@@ -198,7 +202,6 @@ export const PlayCodePage: React.FC = () => {
                     />
                   </div>
 
-                  {/* عدّاد إعادة التعيين */}
                   <div className="text-center space-y-3 pt-2">
                     <p className="text-xs sm:text-sm text-slate-500">
                       Returning to rewards in{' '}
@@ -236,7 +239,6 @@ export const PlayCodePage: React.FC = () => {
                   </div>
                 </div>
               ) : (
-                /* عدّاد قبل الكود */
                 <div className="max-w-md mx-auto w-full">
                   <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-xl border border-play-blue-100/80 space-y-5 text-center">
                     <div className="w-16 h-16 rounded-2xl bg-play-blue-50 border border-play-blue-100 flex items-center justify-center mx-auto text-play-blue-600 shadow-sm">
@@ -286,7 +288,6 @@ export const PlayCodePage: React.FC = () => {
                 </div>
               )
             ) : isError ? (
-              /* ============ الحالة 2: خطأ ============ */
               flowErrorInfo && (
                 <ErrorState
                   error={flowErrorInfo}
@@ -298,7 +299,6 @@ export const PlayCodePage: React.FC = () => {
                 />
               )
             ) : (
-              /* ============ الحالة 3: عادي / بحث ============ */
               <div className="space-y-8 sm:space-y-10 text-center">
 
                 {/* Hero */}
@@ -350,7 +350,7 @@ export const PlayCodePage: React.FC = () => {
                       <div className="pt-2 space-y-2">
                         <button
                           type="button"
-                          onClick={unlockReward}
+                          onClick={() => setIsLockerOpen(true)}
                           className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-play-blue-600 to-play-blue-700 hover:from-play-blue-700 hover:to-play-blue-800 active:scale-[0.98] text-white font-bold text-base shadow-lg shadow-play-blue-600/25 transition duration-150 flex items-center justify-center gap-2"
                         >
                           <span>Unlock Reward</span>
@@ -399,6 +399,7 @@ export const PlayCodePage: React.FC = () => {
               </div>
             )}
 
+            {/* Modals */}
             <HowItWorksModal
               isOpen={isHowItWorksOpen}
               onClose={() => setIsHowItWorksOpen(false)}
@@ -406,6 +407,11 @@ export const PlayCodePage: React.FC = () => {
             <TermsModal
               isOpen={isTermsOpen}
               onClose={() => setIsTermsOpen(false)}
+            />
+            <LockerModal
+              isOpen={isLockerOpen}
+              onClose={() => setIsLockerOpen(false)}
+              onUnlock={handleLockerUnlock}
             />
           </main>
 
