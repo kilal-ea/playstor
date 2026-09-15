@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { STORAGE_KEYS, TIMINGS } from '../config';
-import { getRandomCode } from '../services/rewardsApi';
+import { STORAGE_KEYS } from '../config';
 import { useRewardFlow } from '../hooks/useRewardFlow';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
@@ -21,7 +20,12 @@ import {
   Clock,
   AlertCircle,
 } from 'lucide-react';
-import { ErrorStateInfo } from '../types';
+
+// ==================== Types ====================
+interface RewardSession {
+  claimedCode?: string;
+  value?: number;
+}
 
 // ==================== Constants ====================
 const REWARD_FOUND_DELAY_SECONDS = 30;
@@ -32,7 +36,7 @@ export const PlayCodePage: React.FC = () => {
   const {
     state,
     searchStepText,
-    session,
+    session: rawSession,
     errorInfo: flowErrorInfo,
     isCopied: flowIsCopied,
     startSearch,
@@ -41,13 +45,18 @@ export const PlayCodePage: React.FC = () => {
     resetFlow,
   } = useRewardFlow();
 
+  // ===== Type Assertion لحل مشكلة never =====
+  const session = rawSession as RewardSession | null;
+
   // Modals
   const [isHowItWorksOpen, setIsHowItWorksOpen] = useState(false);
   const [isTermsOpen, setIsTermsOpen] = useState(false);
 
-  // ===== حالة عرض الكود بعد فتحه (UNLOCKED) =====
+  // ===== Countdown قبل ظهور الكود =====
   const [countdown, setCountdown] = useState(REWARD_FOUND_DELAY_SECONDS);
   const [showCode, setShowCode] = useState(false);
+
+  // ===== Countdown إعادة التعيين =====
   const [redirectCountdown, setRedirectCountdown] = useState(
     REDIRECT_AFTER_REVEAL_SECONDS
   );
@@ -84,7 +93,7 @@ export const PlayCodePage: React.FC = () => {
     return () => clearInterval(interval);
   }, [isUnlocked, showCode]);
 
-  // ==================== عدّاد إعادة التوجيه ====================
+  // ==================== عدّاد إعادة التعيين ====================
   useEffect(() => {
     if (!showCode) return;
 
@@ -94,7 +103,6 @@ export const PlayCodePage: React.FC = () => {
       setRedirectCountdown((prev) => {
         if (prev <= 1) {
           clearInterval(interval);
-          // نظّف البيانات ثم أعد تعيين الحالة (بدون تغيير URL)
           sessionStorage.removeItem(STORAGE_KEYS.CLAIMED_CODE);
           sessionStorage.removeItem(STORAGE_KEYS.REWARD_VALUE);
           resetFlow();
@@ -163,7 +171,6 @@ export const PlayCodePage: React.FC = () => {
             {/* ============ الحالة 1: الكود مفتوح ============ */}
             {isUnlocked && session?.claimedCode ? (
               showCode ? (
-                /* ----- بعد 30 ثانية: عرض الكود ----- */
                 <div className="space-y-6">
                   <RewardCodeCard
                     code={session.claimedCode}
@@ -229,7 +236,7 @@ export const PlayCodePage: React.FC = () => {
                   </div>
                 </div>
               ) : (
-                /* ----- عدّاد 30 ثانية قبل الكود ----- */
+                /* عدّاد قبل الكود */
                 <div className="max-w-md mx-auto w-full">
                   <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-xl border border-play-blue-100/80 space-y-5 text-center">
                     <div className="w-16 h-16 rounded-2xl bg-play-blue-50 border border-play-blue-100 flex items-center justify-center mx-auto text-play-blue-600 shadow-sm">
